@@ -1817,9 +1817,10 @@ function CoworkPage() {
 type ComposerWidth = ReturnType<typeof useComposerWidth>
 
 /** One width class for both the transcript and the composer, so the column
- * moves together when the user drags the composer edge. */
-function widthClass(rail: unknown, composer: ComposerWidth): string {
-  return composer.isCustom ? 'w-auto' : 'w-full ' + (rail ? '' : 'md:w-4/5 xl:w-4/6')
+ * moves together when the user drags the composer edge. The rail no longer
+ * changes the fraction: opening the preview must not rewrap the transcript. */
+function widthClass(_rail: unknown, composer: ComposerWidth): string {
+  return composer.isCustom ? 'w-auto' : 'w-full md:w-4/5 xl:w-4/6'
 }
 
 function widthStyle(composer: ComposerWidth): React.CSSProperties | undefined {
