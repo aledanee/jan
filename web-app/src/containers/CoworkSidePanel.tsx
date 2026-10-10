@@ -99,15 +99,18 @@ export function CoworkSidePanel({
       // grow the panel; a dragged width is honored otherwise.
       style={{ width: expanded ? '70%' : `${width}px` }}
     >
-      {/* Resize handle: thin invisible strip on the left edge. Double-click
-          resets to the default width. */}
+      {/* Resize handle: thin strip on the left edge. Hovering shows a grip
+          line so the grab area is discoverable; double-click resets to the
+          default width. Widened so the edge is easy to find by feel. */}
       <div
         role="separator"
         aria-orientation="vertical"
         onPointerDown={onPointerDown}
         onDoubleClick={resetWidth}
-        className="absolute inset-y-0 left-0 z-10 w-1.5 cursor-col-resize touch-none bg-main-view-fg/0 transition-colors hover:bg-main-view-fg/20"
-      />
+        className="group absolute inset-y-0 left-0 z-10 flex w-3 cursor-col-resize touch-none items-stretch justify-start"
+      >
+        <div className="w-1 bg-main-view-fg/0 transition-colors group-hover:bg-main-view-fg/25" />
+      </div>
       <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3">
         {leading}
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
