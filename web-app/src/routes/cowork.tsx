@@ -124,6 +124,7 @@ import {
   type ToolOutcome,
 } from '@/lib/coworkRunner'
 import { useCoworkRun } from '@/hooks/useCoworkRun'
+import { useComposerWidth } from '@/hooks/useComposerWidth'
 import {
   listSubagents,
   type SubagentDefinition,
@@ -195,6 +196,7 @@ function CoworkPage() {
   const navigate = useNavigate()
   const serviceHub = useServiceHub()
   const { selectedModel, selectedProvider, providers } = useModelProvider()
+  const composer = useComposerWidth()
 
   const sessions = useCoworkSessions((s) => s.sessions)
   const currentId = useCoworkSessions((s) => s.currentId)
@@ -1501,14 +1503,8 @@ function CoworkPage() {
                     "Working..." indicator -- rests flush against the input and
                     reads as tucked behind it. */}
                 <ConversationContent
-                  className={cn(
-                    'mx-auto w-full pb-4',
-                    // The centering fractions assume the transcript owns the
-                    // width; with a side panel open the column is already
-                    // narrow, so keeping them crushes the message and composer
-                    // into an unreadable sliver.
-                    !rail && 'md:w-4/5 xl:w-4/6'
-                  )}
+                  className={cn('mx-auto w-full pb-4', widthClass(rail, composer))}
+                  style={widthStyle(composer)}
                 >
                   {uiMessages.map((message, i) => (
                     <Fragment key={message.id}>
@@ -1631,7 +1627,13 @@ function CoworkPage() {
           </div>
 
           <div className="py-4 shrink-0">
-            <div className={cn('mx-auto w-full', !rail && 'md:w-4/5 xl:w-4/6')}>
+            <div className={cn('mx-auto w-full relative', widthClass(rail, composer))} style={widthStyle(composer)}>
+              {composer.isCustom && (
+                <>
+                  <ComposerResizeEdge side="left" onStart={composer.startResize} onReset={composer.reset} />
+                  <ComposerResizeEdge side="right" onStart={composer.startResize} onReset={composer.reset} />
+                </>
+              )}
               {ask && typeof ask.request !== 'string' && (
                 <div className="px-1 pb-2">
                   <CoworkAskCard
@@ -1808,6 +1810,45 @@ function CoworkPage() {
           />
         )}
       </div>
+    </div>
+  )
+}
+
+type ComposerWidth = ReturnType<typeof useComposerWidth>
+
+/** One width class for both the transcript and the composer, so the column
+ * moves together when the user drags the composer edge. */
+function widthClass(rail: unknown, composer: ComposerWidth): string {
+  return composer.isCustom ? 'w-auto' : 'w-full ' + (rail ? '' : 'md:w-4/5 xl:w-4/6')
+}
+
+function widthStyle(composer: ComposerWidth): React.CSSProperties | undefined {
+  return composer.isCustom ? { width: composer.widthPx } : undefined
+}
+
+/** An invisible grab strip on one side of the composer; hover reveals a grip
+ * line. Drag resizes the column, double-click resets it. */
+function ComposerResizeEdge({
+  side,
+  onStart,
+  onReset,
+}: {
+  side: 'left' | 'right'
+  onStart: (e: React.PointerEvent<HTMLDivElement>) => void
+  onReset: () => void
+}) {
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      onPointerDown={onStart}
+      onDoubleClick={onReset}
+      className={cn(
+        'group absolute inset-y-0 z-20 flex w-3 cursor-col-resize touch-none items-stretch',
+        side === 'left' ? '-left-2 justify-start' : '-right-2 justify-end'
+      )}
+    >
+      <div className="w-1 bg-main-view-fg/0 transition-colors group-hover:bg-main-view-fg/25" />
     </div>
   )
 }
