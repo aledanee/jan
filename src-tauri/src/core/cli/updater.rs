@@ -114,11 +114,19 @@ fn compare_versions(a: &str, b: &str) -> Ordering {
     Ordering::Equal
 }
 
+/// Offline build: the analytics proxy is disabled, so the CLI never contacts
+/// `apps.jan.ai` / `apps-nightly.jan.ai` and never sends an install id. Set to
+/// `true` to restore the proxied (counted) update check.
+const ANALYTICS_PROXY_ENABLED: bool = false;
+
 /// The analytics-proxied manifest for this build's channel: same content as
 /// the CDN, but the request is recorded. `None` for a local build (no channel)
 /// or when the user opted out, in which case the CDN is read directly and
 /// nothing identifying is sent anywhere.
 fn tracked_manifest_url() -> Option<&'static str> {
+    if !ANALYTICS_PROXY_ENABLED {
+        return None;
+    }
     if std::env::var_os("JAN_CLI_NO_UPDATE_CHECK").is_some() {
         return None;
     }
@@ -243,11 +251,20 @@ impl AvailableUpdate {
     }
 }
 
+/// Offline build: automatic update checks are disabled, so nothing is fetched
+/// from `delta.jan.ai` on startup. Set to `true` to restore them.
+const AUTO_UPDATE_CHECK_ENABLED: bool = false;
+
 /// A published build strictly newer than this one, or `None` when the check is
 /// opted out of, this is a local build, the manifest is unreachable, or we are
 /// already current. Best-effort by design: every failure is a silent `None` so
 /// the check never blocks or breaks startup.
 pub async fn available_update() -> Option<AvailableUpdate> {
+    // Offline build: no automatic update check, so nothing is fetched from
+    // `delta.jan.ai` on startup. `jan update` still works when run explicitly.
+    if !AUTO_UPDATE_CHECK_ENABLED {
+        return None;
+    }
     if std::env::var_os("JAN_CLI_NO_UPDATE_CHECK").is_some() {
         return None;
     }

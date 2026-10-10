@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button'
 import { useAnalytic } from '@/hooks/useAnalytic'
-import posthog from 'posthog-js'
 import { useTranslation } from '@/i18n/react-i18next-compat'
 
 /**
@@ -13,11 +12,8 @@ export function AnalyticConsent() {
   const { setProductAnalyticPrompt, setProductAnalytic } = useAnalytic()
 
   const handleProductAnalytics = (isAllowed: boolean) => {
-    if (isAllowed) {
-      posthog.opt_in_capturing()
-    } else {
-      posthog.opt_out_capturing()
-    }
+    // Offline build: the answer is recorded but no analytics backend is ever
+    // contacted, so there is nothing to opt in or out of.
     setProductAnalytic(isAllowed)
     setProductAnalyticPrompt(false)
   }

@@ -25,6 +25,11 @@ const JAN_MIRROR_PREFIX_NIGHTLY: &str = "https://apps-nightly.jan.ai/";
 /// Domains that should use mirror download with fallback
 const MIRROR_DOMAINS: &[&str] = &["huggingface.co"];
 
+/// Offline build: the Jan download mirror is disabled, so model downloads go
+/// straight to HuggingFace and no request (or signed session id) is sent to
+/// `apps.jan.ai`. Set to `true` to restore the mirror.
+const JAN_MIRROR_ENABLED: bool = false;
+
 /// Check if this is a nightly build based on package name
 fn is_nightly_build() -> bool {
     let pkg_name = env!("CARGO_PKG_NAME");
@@ -54,10 +59,10 @@ pub fn err_to_string<E: std::fmt::Display>(e: E) -> String {
     format!("Error: {e}")
 }
 
-/// Converts a URL to Jan mirror URL if applicable
-/// e.g., https://huggingface.co/... -> https://apps.jan.ai/huggingface.co/...
-/// or for nightly: https://huggingface.co/... -> https://apps-nightly.jan.ai/huggingface.co/...
-pub fn convert_to_mirror_url(url: &str) -> Option<String> {
+/// Build the mirror URL for a URL on a mirrored domain, ignoring the
+/// `JAN_MIRROR_ENABLED` switch. Split out so the mapping stays testable while
+/// the switch is off.
+pub(crate) fn mirror_url_for(url: &str) -> Option<String> {
     let parsed = Url::parse(url).ok()?;
     let host = parsed.host_str()?;
 
@@ -74,6 +79,19 @@ pub fn convert_to_mirror_url(url: &str) -> Option<String> {
     } else {
         None
     }
+}
+
+/// Converts a URL to Jan mirror URL if applicable
+/// e.g., https://huggingface.co/... -> https://apps.jan.ai/huggingface.co/...
+/// or for nightly: https://huggingface.co/... -> https://apps-nightly.jan.ai/huggingface.co/...
+///
+/// Offline build: always `None` while `JAN_MIRROR_ENABLED` is off, so downloads
+/// go straight to the original host.
+pub fn convert_to_mirror_url(url: &str) -> Option<String> {
+    if !JAN_MIRROR_ENABLED {
+        return None;
+    }
+    mirror_url_for(url)
 }
 
 /// Get session identifier for request signing

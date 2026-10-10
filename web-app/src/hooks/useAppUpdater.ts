@@ -68,15 +68,28 @@ export const useAppUpdater = () => {
         }
 
         if (!isDev()) {
+          // Offline build: never reach the updater when it is disabled, so no
+          // request is made to the update endpoints at all.
+          if (AUTO_UPDATER_DISABLED) {
+            console.log('Auto updater is disabled')
+            const newState = {
+              isUpdateAvailable: false,
+              updateInfo: null,
+              ...(resetRemindMeLater && { remindMeLater: false }),
+            }
+            setUpdateState((prev) => ({
+              ...prev,
+              ...newState,
+            }))
+            // Sync to other instances
+            syncStateToOtherInstances(newState)
+            return null
+          }
+
           // Production mode - use actual Tauri updater
           const update = await getServiceHub().updater().check()
 
           if (update) {
-            if (AUTO_UPDATER_DISABLED) {
-              console.log('Auto updater is disabled')
-              return null
-            }
-
             const newState = {
               isUpdateAvailable: true,
               remindMeLater: false,
