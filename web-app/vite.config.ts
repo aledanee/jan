@@ -77,12 +77,15 @@ export default defineConfig(({ mode }) => {
 
       POSTHOG_KEY: JSON.stringify(env.POSTHOG_KEY),
       POSTHOG_HOST: JSON.stringify(env.POSTHOG_HOST),
-      // Offline build: both catalogs are served from the app bundle instead of
-      // GitHub, so no request leaves the machine. `model_catalog.json` is empty
-      // (the Hub lists nothing remote); `latest_jan_model.json` carries the
-      // first-run model metadata.
-      MODEL_CATALOG_URL: JSON.stringify('/model_catalog.json'),
-      LATEST_JAN_MODEL_URL: JSON.stringify('/latest_jan_model.json'),
+      // Model catalogs restored to the upstream janhq catalog (user request):
+      // only this URL is fetched, and only when the Hub is opened. Analytics,
+      // updater, release notes and the download mirror stay disabled.
+      MODEL_CATALOG_URL: JSON.stringify(
+        'https://raw.githubusercontent.com/janhq/model-catalog/main/model_catalog_v2.json'
+      ),
+      LATEST_JAN_MODEL_URL: JSON.stringify(
+        'https://raw.githubusercontent.com/janhq/model-catalog/main/latest_jan_model.json'
+      ),
       // Offline build: the app never checks for updates unless explicitly
       // re-enabled with AUTO_UPDATER_DISABLED=false.
       AUTO_UPDATER_DISABLED: JSON.stringify(
