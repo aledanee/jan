@@ -248,7 +248,22 @@ function HubContent() {
             return isLlamaCppDownloaded || isMlxDownloaded
           }),
         }))
-        .filter((model) => (model.quants?.length ?? 0) > 0)
+        .filter((model) => {
+          // Keep quants-carrying models that have at least one downloaded variant…
+          if ((model.quants?.length ?? 0) > 0) return true
+          // …and mlx models, which have no quants at all: the registry matches
+          // on the bare model name instead (see MlxModelDownloadAction).
+          if (!model.is_mlx && !(model.library_name === 'mlx')) return false
+          const modelId = sanitizeModelId(model.model_name.split('/').pop() ?? model.model_name)
+          const isMlxDownloaded = useModelProvider
+            .getState()
+            .getProviderByName('mlx')
+            ?.models.some(
+              (m: { id: string }) =>
+                m.id === modelId || m.id === `${model.developer}/${modelId}`
+            )
+          return !!isMlxDownloaded
+        })
     }
     // Add HuggingFace repo at the beginning if available
     if (huggingFaceRepo) {
